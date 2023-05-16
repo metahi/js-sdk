@@ -1,23 +1,23 @@
 # MetahiSDK for javascript
 
-`@metahi/metahisdk-js` is a helper which assists you in integrating MetahiSDK into your web app.
+`@metahi/js-sdk` is a helper which assists you in integrating MetahiSDK into your web app.
 
 ## Installation
 
 ```
-yarn add @metahi/metahisdk-js
+yarn add @metahi/js-sdk
 ```
 
 or
 
 ```
-npm install @metahi/metahisdk-js
+npm install @metahi/js-sdk
 ```
 
 ## Documentation
 
 ```
-import MetahiSDK from '@metahi/metahisdk-js';
+import MetahiSDK from '@metahi/js-sdk';
 ```
 
 First of all, you need to create a configuration object:
@@ -42,7 +42,7 @@ const metahiSDK = new MetahiSDK(options);
 After initializing your widget, call a method **open()** to open specific page or functionality
 
 ```
-import MetahiSDK from '@metahi/metahisdk-js';
+import MetahiSDK from '@metahi/js-sdk';
 
 const metahiSDK = new MetahiSDK(options);
 
