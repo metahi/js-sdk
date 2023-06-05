@@ -1,29 +1,17 @@
-enum environment {
-  development = 'DEVELOPMENT',
-  production = 'PRODUCTION',
-}
-
 enum eventTypes {
   initialize = 'METAHI_SDK__INITIALIZE',
-  show = 'METAHI_SDK__SHOW',
-}
-
-enum screenTypes {
-  collections = 'COLLECTIONS',
-  collection = 'COLLECTION',
-  assets = 'ASSETS',
-  asset = 'ASSET',
+  customize = 'METAHI_SDK__CUSTOMIZE',
+  navigate = 'METAHI_SDK__NAVIGATE',
+  action = 'METAHI_SDK__ACTION',
 }
 
 enum receiveEventTypes {
   initialized = 'INITIALIZED',
-  loaded = 'LOADED',
 }
 
 interface options {
   partner_id?: string
   container_id?: string
-  environment?: environment
   origin?: string
   width?: number
   height?: number
@@ -48,10 +36,19 @@ type customListener = (data: {
   [x: string]: any
 }) => void;
 
-type openProps = {
-  name: screenTypes;
-  params?: { [x: string]: string|number }
-  query?: { [x: string]: string|number|boolean };
+type customizeProps = {
+  branding: any;
+  palette: any;
+};
+
+type navigateProps = {
+  name: string;
+  params?: { [x: string]: string|number|boolean };
+};
+
+type actionProps = {
+  name: string;
+  params?: { [x: string]: string|number|boolean };
 };
 
 class MetahiSDK {
@@ -68,7 +65,9 @@ class MetahiSDK {
   checkIntervalId: number | undefined;
   ready: boolean;
   debug: boolean;
-  openOnHold?: openProps;
+  customizeOnHold?: customizeProps;
+  navigateOnHold?: navigateProps;
+  actionOnHold?: actionProps;
   onLoaded?: () => void;
 
   constructor(givenOptions: options = {}) {
@@ -76,7 +75,7 @@ class MetahiSDK {
 
     this.partner_id = options.partner_id;
     this.container_id = options.container_id;
-    this.origin = options.origin || (options.environment === environment.production ? 'https://metahi.world' : 'https://metahi.dev');
+    this.origin = options.origin || 'https://metahi.dev';
     this.width = options.autosize ? undefined : options.width;
     this.height = options.autosize ? undefined : options.height;
     this.listeners = options.listeners || {};
@@ -92,18 +91,50 @@ class MetahiSDK {
     this.unlistenWidget();
   }
 
-  open(options: openProps): void {
-    const { name, params, query } = options;
+  customize(options: customizeProps): void {
+    const { branding = null, palette = null } = options;
     if (!this.ready) {
-      this.openOnHold = { name, params, query };
+      this.customizeOnHold = { branding, palette };
       return;
     }
     if (this.debug) {
-      console.log(`[debug] show ${name} params=${JSON.stringify(params)}`);
+      console.log(`[debug] customize`);
     }
     this.sendEvent({
-      type: eventTypes.show,
-      data: { name, params, query },
+      type: eventTypes.customize,
+      data: { branding, palette },
+      origin: this.origin,
+    });
+  }
+
+  navigate(options: navigateProps): void {
+    const { name, params } = options;
+    if (!this.ready) {
+      this.navigateOnHold = { name, params };
+      return;
+    }
+    if (this.debug) {
+      console.log(`[debug] navigate name=${name} params=${JSON.stringify(params)}`);
+    }
+    this.sendEvent({
+      type: eventTypes.navigate,
+      data: { name, params },
+      origin: this.origin,
+    });
+  }
+
+  action(options: actionProps): void {
+    const { name, params } = options;
+    if (!this.ready) {
+      this.actionOnHold = { name, params };
+      return;
+    }
+    if (this.debug) {
+      console.log(`[debug] action name=${name} params=${JSON.stringify(params)}`);
+    }
+    this.sendEvent({
+      type: eventTypes.action,
+      data: { name, params },
       origin: this.origin,
     });
   }
@@ -185,9 +216,17 @@ class MetahiSDK {
     switch (event.data.type) {
       case receiveEventTypes.initialized:
         this.ready = true;
-        if (this.openOnHold) {
-          this.open(this.openOnHold);
-          this.openOnHold = undefined;
+        if (this.customizeOnHold) {
+          this.customize(this.customizeOnHold);
+          this.customizeOnHold = undefined;
+        }
+        if (this.navigateOnHold) {
+          this.navigate(this.navigateOnHold);
+          this.navigateOnHold = undefined;
+        }
+        if (this.actionOnHold) {
+          this.action(this.actionOnHold);
+          this.actionOnHold = undefined;
         }
         break;
       default:
@@ -211,7 +250,7 @@ class MetahiSDK {
   }
 
   private getEmbedUrl(): string {
-    return `${this.origin}/iframe`;
+    return `${this.origin}`;
   }
 }
 

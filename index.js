@@ -1,25 +1,14 @@
 "use strict";
-var environment;
-(function (environment) {
-    environment["development"] = "DEVELOPMENT";
-    environment["production"] = "PRODUCTION";
-})(environment || (environment = {}));
 var eventTypes;
 (function (eventTypes) {
     eventTypes["initialize"] = "METAHI_SDK__INITIALIZE";
-    eventTypes["show"] = "METAHI_SDK__SHOW";
+    eventTypes["customize"] = "METAHI_SDK__CUSTOMIZE";
+    eventTypes["navigate"] = "METAHI_SDK__NAVIGATE";
+    eventTypes["action"] = "METAHI_SDK__ACTION";
 })(eventTypes || (eventTypes = {}));
-var screenTypes;
-(function (screenTypes) {
-    screenTypes["collections"] = "COLLECTIONS";
-    screenTypes["collection"] = "COLLECTION";
-    screenTypes["assets"] = "ASSETS";
-    screenTypes["asset"] = "ASSET";
-})(screenTypes || (screenTypes = {}));
 var receiveEventTypes;
 (function (receiveEventTypes) {
     receiveEventTypes["initialized"] = "INITIALIZED";
-    receiveEventTypes["loaded"] = "LOADED";
 })(receiveEventTypes || (receiveEventTypes = {}));
 class MetahiSDK {
     constructor(givenOptions = {}) {
@@ -34,9 +23,17 @@ class MetahiSDK {
             switch (event.data.type) {
                 case receiveEventTypes.initialized:
                     this.ready = true;
-                    if (this.openOnHold) {
-                        this.open(this.openOnHold);
-                        this.openOnHold = undefined;
+                    if (this.customizeOnHold) {
+                        this.customize(this.customizeOnHold);
+                        this.customizeOnHold = undefined;
+                    }
+                    if (this.navigateOnHold) {
+                        this.navigate(this.navigateOnHold);
+                        this.navigateOnHold = undefined;
+                    }
+                    if (this.actionOnHold) {
+                        this.action(this.actionOnHold);
+                        this.actionOnHold = undefined;
                     }
                     break;
                 default:
@@ -48,7 +45,7 @@ class MetahiSDK {
         const options = Object.assign({}, givenOptions);
         this.partner_id = options.partner_id;
         this.container_id = options.container_id;
-        this.origin = options.origin || (options.environment === environment.production ? 'https://metahi.world' : 'https://metahi.dev');
+        this.origin = options.origin || 'https://metahi.dev';
         this.width = options.autosize ? undefined : options.width;
         this.height = options.autosize ? undefined : options.height;
         this.listeners = options.listeners || {};
@@ -62,18 +59,48 @@ class MetahiSDK {
     destroy() {
         this.unlistenWidget();
     }
-    open(options) {
-        const { name, params, query } = options;
+    customize(options) {
+        const { branding = null, palette = null } = options;
         if (!this.ready) {
-            this.openOnHold = { name, params, query };
+            this.customizeOnHold = { branding, palette };
             return;
         }
         if (this.debug) {
-            console.log(`[debug] show ${name} params=${JSON.stringify(params)}`);
+            console.log(`[debug] customize`);
         }
         this.sendEvent({
-            type: eventTypes.show,
-            data: { name, params, query },
+            type: eventTypes.customize,
+            data: { branding, palette },
+            origin: this.origin,
+        });
+    }
+    navigate(options) {
+        const { name, params } = options;
+        if (!this.ready) {
+            this.navigateOnHold = { name, params };
+            return;
+        }
+        if (this.debug) {
+            console.log(`[debug] navigate name=${name} params=${JSON.stringify(params)}`);
+        }
+        this.sendEvent({
+            type: eventTypes.navigate,
+            data: { name, params },
+            origin: this.origin,
+        });
+    }
+    action(options) {
+        const { name, params } = options;
+        if (!this.ready) {
+            this.actionOnHold = { name, params };
+            return;
+        }
+        if (this.debug) {
+            console.log(`[debug] action name=${name} params=${JSON.stringify(params)}`);
+        }
+        this.sendEvent({
+            type: eventTypes.action,
+            data: { name, params },
             origin: this.origin,
         });
     }
@@ -135,7 +162,7 @@ class MetahiSDK {
         }, options.origin || this.origin);
     }
     getEmbedUrl() {
-        return `${this.origin}/iframe`;
+        return `${this.origin}`;
     }
 }
 module.exports = MetahiSDK;

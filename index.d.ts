@@ -1,17 +1,6 @@
-declare enum environment {
-    development = "DEVELOPMENT",
-    production = "PRODUCTION"
-}
-declare enum screenTypes {
-    collections = "COLLECTIONS",
-    collection = "COLLECTION",
-    assets = "ASSETS",
-    asset = "ASSET"
-}
 interface options {
     partner_id?: string;
     container_id?: string;
-    environment?: environment;
     origin?: string;
     width?: number;
     height?: number;
@@ -20,15 +9,22 @@ interface options {
     onLoaded?: () => void;
     [x: string]: any;
 }
-type customListener = (data: {
+declare type customListener = (data: {
     [x: string]: any;
 }) => void;
-type openProps = {
-    name: screenTypes;
+declare type customizeProps = {
+    branding: any;
+    palette: any;
+};
+declare type navigateProps = {
+    name: string;
     params?: {
-        [x: string]: string | number;
+        [x: string]: string | number | boolean;
     };
-    query?: {
+};
+declare type actionProps = {
+    name: string;
+    params?: {
         [x: string]: string | number | boolean;
     };
 };
@@ -45,11 +41,15 @@ declare class MetahiSDK {
     checkIntervalId: number | undefined;
     ready: boolean;
     debug: boolean;
-    openOnHold?: openProps;
+    customizeOnHold?: customizeProps;
+    navigateOnHold?: navigateProps;
+    actionOnHold?: actionProps;
     onLoaded?: () => void;
     constructor(givenOptions?: options);
     destroy(): void;
-    open(options: openProps): void;
+    customize(options: customizeProps): void;
+    navigate(options: navigateProps): void;
+    action(options: actionProps): void;
     mount(): void;
     private listenWidget;
     private unlistenWidget;
